@@ -1,32 +1,29 @@
 package Backend.CGRSBackend.security;
 
-import Backend.CGRSBackend.entity.User;
-import Backend.CGRSBackend.repository.UserRepository;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
-import java.util.List;
 
 /**
- * Intercepts every request to validate the JWT Bearer token.
- * If valid, sets the authenticated user in the SecurityContext.
+ * JWT Authentication Filter — runs once per request.
+ * Extracts and validates the Bearer token, then sets Spring Security context.
  */
 @Component
 @RequiredArgsConstructor
 public class JwtFilter extends OncePerRequestFilter {
 
     private final JwtUtil jwtUtil;
-    private final UserRepository userRepository;
+    private final CustomUserDetailsService customUserDetailsService;
 
     @Override
     protected void doFilterInternal(HttpServletRequest request,
@@ -34,18 +31,16 @@ public class JwtFilter extends OncePerRequestFilter {
                                     FilterChain filterChain)
             throws ServletException, IOException {
 
-        // Extract Authorization header
         String authHeader = request.getHeader("Authorization");
 
-        // Pass through if no Bearer token present
+        // Skip if no Bearer token
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
             filterChain.doFilter(request, response);
             return;
         }
 
-        String token = authHeader.substring(7); // Strip "Bearer "
+        String token = authHeader.substring(7);
 
-        // Validate token and skip if invalid
         if (!jwtUtil.isTokenValid(token)) {
             filterChain.doFilter(request, response);
             return;
@@ -53,20 +48,16 @@ public class JwtFilter extends OncePerRequestFilter {
 
         String email = jwtUtil.extractEmail(token);
 
-        // Only set authentication if not already set in context
+        // Only authenticate if context is not already set
         if (email != null && SecurityContextHolder.getContext().getAuthentication() == null) {
-            User user = userRepository.findByEmail(email).orElse(null);
+            UserDetails userDetails = customUserDetailsService.loadUserByUsername(email);
 
-            if (user != null) {
-                // Build Spring Security authentication token with user's role
-                var authToken = new UsernamePasswordAuthenticationToken(
-                        user.getEmail(),
-                        null,
-                        List.of(new SimpleGrantedAuthority("ROLE_" + user.getRole().name()))
-                );
-                authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
-                SecurityContextHolder.getContext().setAuthentication(authToken);
-            }
+            UsernamePasswordAuthenticationToken authToken =
+                    new UsernamePasswordAuthenticationToken(
+                            userDetails, null, userDetails.getAuthorities());
+
+            authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+            SecurityContextHolder.getContext().setAuthentication(authToken);
         }
 
         filterChain.doFilter(request, response);

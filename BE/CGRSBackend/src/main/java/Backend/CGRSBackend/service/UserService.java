@@ -1,42 +1,41 @@
 package Backend.CGRSBackend.service;
 
-import Backend.CGRSBackend.dto.AuthResponse;
-import Backend.CGRSBackend.dto.LoginRequest;
-import Backend.CGRSBackend.dto.RegisterRequest;
-import Backend.CGRSBackend.entity.Role;
-import Backend.CGRSBackend.entity.User;
-import Backend.CGRSBackend.repository.UserRepository;
+import Backend.CGRSBackend.dto.*;
+import Backend.CGRSBackend.entity.*;
+import Backend.CGRSBackend.repository.*;
 import Backend.CGRSBackend.security.JwtUtil;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
+import java.util.stream.Collectors;
+
 /**
- * Handles user registration and login logic.
+ * Handles user registration, login, and user data queries.
  */
 @Service
 @RequiredArgsConstructor
 public class UserService {
 
     private final UserRepository userRepository;
+    private final CitizenRepository citizenRepository;
+    private final AuthorityRepository authorityRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtUtil jwtUtil;
 
     /**
      * Register a new user.
-     * Defaults role to CITIZEN if not provided.
-     * Returns a JWT token on success.
+     * ✔ Creates Citizen/Authority profile based on role.
+     * ✘ Does NOT return a JWT token.
      */
-    public AuthResponse register(RegisterRequest request) {
-        // Check for existing account
+    public RegisterResponse register(RegisterRequest request) {
         if (userRepository.existsByEmail(request.getEmail())) {
             throw new RuntimeException("Email already registered: " + request.getEmail());
         }
 
-        // Determine role — default to CITIZEN
         Role role = (request.getRole() != null) ? request.getRole() : Role.CITIZEN;
 
-        // Build and save user with hashed password
         User user = User.builder()
                 .name(request.getName())
                 .email(request.getEmail())
@@ -46,27 +45,52 @@ public class UserService {
 
         userRepository.save(user);
 
-        // Generate token and return auth response
-        String token = jwtUtil.generateToken(user.getEmail());
-        return new AuthResponse(token, user.getEmail(), user.getRole().name());
+        // Auto-create linked profile based on role
+        if (role == Role.CITIZEN) {
+            citizenRepository.save(Citizen.builder().user(user).build());
+        } else if (role == Role.AUTHORITY) {
+            authorityRepository.save(Authority.builder()
+                    .name(user.getName())
+                    .department("General") // default; can be updated by admin
+                    .user(user)
+                    .build());
+        }
+
+        return new RegisterResponse(
+                "User registered successfully",
+                user.getName(),
+                user.getEmail(),
+                user.getRole().name()
+        );
     }
 
     /**
-     * Authenticate an existing user.
-     * Returns a JWT token on success.
+     * Authenticate and return JWT token.
+     * ✔ This is the ONLY place a JWT is generated.
      */
-    public AuthResponse login(LoginRequest request) {
-        // Look up user by email
+    public LoginResponse login(LoginRequest request) {
         User user = userRepository.findByEmail(request.getEmail())
-                .orElseThrow(() -> new RuntimeException("User not found with email: " + request.getEmail()));
+                .orElseThrow(() -> new RuntimeException("User not found: " + request.getEmail()));
 
-        // Verify password
         if (!passwordEncoder.matches(request.getPassword(), user.getPassword())) {
             throw new RuntimeException("Invalid password");
         }
 
-        // Generate and return JWT
         String token = jwtUtil.generateToken(user.getEmail());
-        return new AuthResponse(token, user.getEmail(), user.getRole().name());
+        return new LoginResponse(token, user.getEmail(), user.getRole().name());
+    }
+
+    /**
+     * Get all users as safe DTOs (no passwords).
+     */
+    public List<UserDto> getAllUsers() {
+        return userRepository.findAll().stream()
+                .map(u -> UserDto.builder()
+                        .id(u.getId())
+                        .name(u.getName())
+                        .email(u.getEmail())
+                        .role(u.getRole().name())
+                        .build())
+                .collect(Collectors.toList());
     }
 }
