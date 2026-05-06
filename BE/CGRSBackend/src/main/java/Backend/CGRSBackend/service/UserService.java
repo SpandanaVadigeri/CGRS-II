@@ -27,11 +27,27 @@ public class UserService {
     /**
      * Register a new user.
      * ✔ Creates Citizen/Authority profile based on role.
+     * ✔ Optionally saves Aadhaar number if provided (enables OTP login).
      * ✘ Does NOT return a JWT token.
      */
     public RegisterResponse register(RegisterRequest request) {
         if (userRepository.existsByEmail(request.getEmail())) {
             throw new RuntimeException("Email already registered: " + request.getEmail());
+        }
+
+        // Aadhaar validation (if provided)
+        String aadhaar = request.getAadhaarNumber();
+        if (aadhaar != null && !aadhaar.isBlank()) {
+            if (!aadhaar.matches("\\d{12}")) {
+                throw new RuntimeException(
+                        "Invalid Aadhaar number. Must be exactly 12 numeric digits.");
+            }
+            if (userRepository.existsByAadhaarNumber(aadhaar)) {
+                throw new RuntimeException(
+                        "Aadhaar number already registered: " + aadhaar);
+            }
+        } else {
+            aadhaar = null; // normalise empty string → null
         }
 
         Role role = (request.getRole() != null) ? request.getRole() : Role.CITIZEN;
@@ -41,6 +57,7 @@ public class UserService {
                 .email(request.getEmail())
                 .password(passwordEncoder.encode(request.getPassword()))
                 .role(role)
+                .aadhaarNumber(aadhaar)   // null if not provided — no OTP login until set
                 .build();
 
         userRepository.save(user);

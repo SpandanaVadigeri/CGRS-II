@@ -4,6 +4,10 @@ import jakarta.persistence.*;
 import lombok.*;
 import java.time.LocalDateTime;
 
+/**
+ * Core grievance entity.
+ * Phase 3: added department routing via ManyToOne → Department.
+ */
 @Entity
 @Table(name = "grievances")
 @Data
@@ -46,6 +50,14 @@ public class Grievance {
     @JoinColumn(name = "authority_id")
     private Authority authority;
 
+    /**
+     * Phase 3 — Department Routing.
+     * Nullable: grievances may be unrouted until an admin assigns a department.
+     */
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "department_id")
+    private Department department;
+
     @Column(nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
@@ -61,3 +73,4 @@ public class Grievance {
         updatedAt = LocalDateTime.now();
     }
 }
+

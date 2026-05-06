@@ -25,10 +25,12 @@ public class AuthorityService {
 
     /**
      * Update the status of a grievance (AUTHORITY can change status and add remarks).
+     * Intentionally strips authorityId and departmentId — authorities cannot
+     * reassign ownership or re-route to other departments.
      */
     public GrievanceDto updateStatus(Long grievanceId, UpdateGrievanceRequest request) {
-        // Authority cannot reassign to another authority — null out authorityId
-        request.setAuthorityId(null);
+        request.setAuthorityId(null);    // authority cannot reassign to another authority
+        request.setDepartmentId(null);   // Phase 3: authority cannot re-route department
         return grievanceService.updateGrievance(grievanceId, request);
     }
 }

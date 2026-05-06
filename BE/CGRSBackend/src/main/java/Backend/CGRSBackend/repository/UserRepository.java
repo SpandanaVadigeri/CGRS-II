@@ -7,7 +7,7 @@ import org.springframework.stereotype.Repository;
 import java.util.Optional;
 
 /**
- * Repository for User entity — provides CRUD + custom email lookup.
+ * Repository for User entity — provides CRUD + custom lookups.
  */
 @Repository
 public interface UserRepository extends JpaRepository<User, Long> {
@@ -17,4 +17,11 @@ public interface UserRepository extends JpaRepository<User, Long> {
 
     // Used during registration to check for duplicates
     boolean existsByEmail(String email);
+
+    // Aadhaar OTP login — look up user by Aadhaar number
+    Optional<User> findByAadhaarNumber(String aadhaarNumber);
+
+    // Prevent duplicate Aadhaar during registration
+    boolean existsByAadhaarNumber(String aadhaarNumber);
 }
+

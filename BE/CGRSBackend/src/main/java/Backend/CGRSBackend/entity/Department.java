@@ -5,7 +5,7 @@ import lombok.*;
 
 /**
  * Represents a government department in the CGRS system.
- * Basic structure for Phase 1 - can be extended later.
+ * Phase 3: added description field and used as FK in Grievance.
  */
 @Entity
 @Table(name = "departments")
@@ -21,4 +21,8 @@ public class Department {
 
     @Column(nullable = false, unique = true)
     private String name;
+
+    /** Optional description of the department's scope/jurisdiction. */
+    private String description;
 }
+

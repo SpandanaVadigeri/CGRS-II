@@ -31,9 +31,13 @@ public class SecurityConfig {
         http
             .csrf(csrf -> csrf.disable())
             .authorizeHttpRequests(auth -> auth
-                .requestMatchers("/auth/**").permitAll()       // public
-                .requestMatchers("/admin/**").hasRole("ADMIN") // admin only
-                .requestMatchers("/authority/**").hasRole("AUTHORITY") // authority only
+                // Public — no JWT required
+                .requestMatchers("/auth/**").permitAll()
+                // Role-restricted
+                .requestMatchers("/admin/**").hasRole("ADMIN")
+                .requestMatchers("/authority/**").hasRole("AUTHORITY")
+                // All other requests need a valid JWT (any role)
+                // Phase 3: /departments, /grievances/** handled here
                 .anyRequest().authenticated()
             )
             .sessionManagement(session ->

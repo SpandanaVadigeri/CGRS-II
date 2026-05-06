@@ -10,6 +10,7 @@ import java.time.LocalDateTime;
 
 /**
  * Response DTO for grievance data — hides entity internals.
+ * Phase 3: added departmentName for department routing visibility.
  */
 @Data
 @NoArgsConstructor
@@ -26,6 +27,9 @@ public class GrievanceDto {
     private String citizenEmail;
     private String authorityName;
     private String authorityDepartment;
+    /** Phase 3 — Department Routing */
+    private String departmentName;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 }
+
