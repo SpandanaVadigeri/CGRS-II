@@ -1,111 +1,192 @@
-# 🚀 CGRS-II (Citizen Grievance Redressal System)
+# CGRS-II: AI-Enabled Smart Citizen Grievance Redressal System
 
-## 📌 Overview
+## Overview
 
-CGRS-II is a **Citizen Grievance Redressal System** designed to allow users to register, track, and manage complaints efficiently.
-This project follows a **modular full-stack architecture** with a Spring Boot backend and a mobile frontend (to be integrated in Phase 2).
+CGRS-II is a full-stack system designed to support efficient grievance management for citizens. It enables complaint registration, tracking, resolution, and monitoring through a secure and scalable architecture.
+
+The system integrates:
+
+* Aadhaar-based OTP verification (simulated) for identity validation
+* JWT-based authentication for secure session management
+* Role-based access control for citizens, authorities, and administrators
+* Modular backend services with extensibility for AI integration
+
+The project follows a phased development approach and is currently implemented up to advanced backend features.
 
 ---
 
-## 🏗️ Project Structure
+## Project Structure
 
 ```
 CGRS-II/
- ├── BE/                # Backend (Spring Boot)
- │   └── CGRSBackend/
- └── FE/                # Frontend (React Native - upcoming)
+ ├── BE/
+ │   └── CGRSBackend/      # Spring Boot backend
+ └── FE/                   # React Native mobile application (under development)
 ```
 
 ---
 
-## ⚙️ Tech Stack
+## Technology Stack
 
-### 🔹 Backend
+### Backend
 
 * Java 17
 * Spring Boot
+* Spring Web
 * Spring Data JPA (Hibernate)
-* Spring Security + JWT
+* Spring Security
+* JWT (JSON Web Token)
 * PostgreSQL
+* Lombok
 
-### 🔹 Frontend (Phase 2)
+### Frontend
 
-* React Native
-
----
-
-## ✅ Phase 1 (Completed)
-
-### 🔐 User Management
-
-* User Registration
-* User Login (JWT Authentication)
-* Role-based access:
-
-  * Citizen
-  * Admin
-  * Authority
-
-### 📄 Complaint Module
-
-* Create Complaint
-* View All Complaints
-* View Complaint by ID
-* Update Complaint Status
-* Delete Complaint
-
-### 🗄️ Database
-
-* Users
-* Complaints
-* Departments
-* Status Logs
+* React Native (mobile application)
 
 ---
 
-## 🌐 REST APIs
+## Implemented Features
 
-### Auth APIs
+### 1. Authentication and Security
+
+#### Email/Password Authentication
+
+* User registration (no token generation)
+* Login with JWT token issuance
+
+#### Aadhaar OTP Authentication (Simulated)
+
+* OTP generation for Aadhaar number
+* OTP verification with expiry handling
+* JWT issued only after successful OTP verification
+
+#### Security
+
+* Stateless authentication using JWT
+* Role-based authorization
+* Protected APIs with token validation
+
+---
+
+### 2. User Roles
+
+* **Citizen**
+
+  * Submit grievances
+  * Track complaint status
+
+* **Authority**
+
+  * View grievances assigned to their department
+  * Update status and resolve complaints
+
+* **Admin**
+
+  * Monitor all grievances
+  * Manage departments and system-level data
+
+---
+
+### 3. Grievance Management
+
+* Create grievance
+* View grievances (role-based filtering)
+* Update grievance status
+* Delete grievance
+* Assign grievances to departments
+
+---
+
+### 4. Department Routing
+
+* Grievances are assigned to specific departments
+* Authorities handle grievances based on department mapping
+
+---
+
+### 5. Status Tracking (Timeline)
+
+* Maintain history of grievance status updates
+* Track lifecycle of a complaint
+* Retrieve complete status timeline
+
+---
+
+### 6. Notification System (Basic)
+
+* Notification service layer implemented
+* Triggered on:
+
+  * Grievance creation
+  * Status updates
+* Currently simulated (console-based)
+
+---
+
+### 7. Escalation System
+
+* Automatic escalation of unresolved grievances
+* Based on predefined time thresholds
+* Implemented using scheduled background tasks
+
+---
+
+## REST API Endpoints
+
+### Authentication
 
 ```
 POST /auth/register
 POST /auth/login
-```
-
-### Complaint APIs
-
-```
-POST   /complaints
-GET    /complaints
-GET    /complaints/{id}
-PUT    /complaints/{id}
-DELETE /complaints/{id}
+POST /auth/send-otp
+POST /auth/verify-otp
 ```
 
 ---
 
-## 🛠️ Setup Instructions
-
-### 1️⃣ Clone Repository
+### Grievance
 
 ```
-git clone https://github.com/YOUR_USERNAME/CGRS-II.git
-cd CGRS-II
-```
-
----
-
-### 2️⃣ Backend Setup
-
-Go to backend folder:
-
-```
-cd BE/CGRSBackend
+POST   /grievances
+GET    /grievances
+GET    /grievances/{id}
+PUT    /grievances/{id}
+DELETE /grievances/{id}
+GET    /grievances/{id}/history
 ```
 
 ---
 
-### 3️⃣ Configure Database
+### Department
+
+```
+POST /admin/departments
+GET  /departments
+```
+
+---
+
+## Authentication Flow
+
+### Email/Password Login
+
+1. User registers
+2. User logs in using credentials
+3. JWT token is generated
+4. Token is used for accessing secured APIs
+
+---
+
+### Aadhaar OTP Login
+
+1. User enters Aadhaar number
+2. OTP is generated and sent (simulated)
+3. User verifies OTP
+4. JWT token is issued upon successful verification
+
+---
+
+## Database Configuration
 
 Update `application.properties`:
 
@@ -120,62 +201,99 @@ spring.jpa.show-sql=true
 
 ---
 
-### 4️⃣ Run Backend
+## Setup Instructions
 
-Using Maven:
+### 1. Clone Repository
+
+```
+git clone https://github.com/YOUR_USERNAME/CGRS-II.git
+cd CGRS-II/BE/CGRSBackend
+```
+
+---
+
+### 2. Configure Database
+
+* Ensure PostgreSQL is running
+* Create database: `cgrs_mobile`
+* Update credentials in `application.properties`
+
+---
+
+### 3. Run Backend
 
 ```
 mvn spring-boot:run
 ```
 
-OR run from IntelliJ.
+Or run the main application class from IntelliJ.
 
 ---
 
-### 5️⃣ Test APIs
+### 4. API Testing
 
 Use Postman:
 
-* Register user
-* Login to get JWT token
-* Use token for complaint APIs
-
----
-
-## 🔐 Authentication
-
-* JWT-based authentication
-* Include token in headers:
+* Authenticate via login or OTP
+* Use JWT token in header:
 
 ```
-Authorization: Bearer <your_token>
+Authorization: Bearer <token>
 ```
 
 ---
 
-## 📌 Notes
+## Frontend (Mobile Application)
 
-* PostgreSQL must be running locally
-* Ensure correct DB credentials
-* Tables are auto-created using JPA
+The project includes a React Native-based mobile application in the `FE/` directory.
 
----
+Current status:
 
-## 🚀 Upcoming (Phase 2)
+* Project structure initialized
+* Backend integration in progress
 
-* React Native Mobile App
-* API Integration with Backend
-* UI for Complaint Management
+Planned capabilities:
 
----
-
-## 👥 Team
-
-* Your Name (Backend Development)
-* Team Members
+* User authentication (JWT and OTP)
+* Complaint submission with location and media
+* Complaint tracking and updates
 
 ---
 
-## 📄 License
+## System Architecture Summary
+
+```
+Mobile Application (React Native)
+        ↓
+Aadhaar OTP Verification (Simulated)
+        ↓
+JWT Authentication
+        ↓
+Spring Boot Backend
+        ↓
+PostgreSQL Database
+```
+
+---
+
+## Future Enhancements
+
+* AI-based grievance classification (NLP)
+* Image-based issue detection (computer vision)
+* Sentiment analysis for prioritization
+* Firebase Cloud Messaging integration
+* Advanced analytics dashboard
+
+---
+
+## Notes
+
+* Aadhaar integration is simulated for academic purposes
+* OTP functionality is implemented without external services
+* Backend is modular and designed for scalability
+
+---
+
+## License
 
 This project is developed for academic purposes.
